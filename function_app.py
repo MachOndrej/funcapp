@@ -1,6 +1,7 @@
 import logging
 import azure.functions as func
 import pandas as pd
+import pyodbc
 import os
 # Modules import
 from date_variables import *    # Day/week variables
@@ -37,20 +38,49 @@ class EmailSender:
 
             # Send the email
             smtp_server.sendmail(self.sender_email, self.recipient_email, msg.as_string())
-
             # Quit the SMTP server
             smtp_server.quit()
 
             print("Email sent successfully!")
-
+            logging.info("Email sent successfully!")
         except Exception as e:
             print("An error occurred while sending the email:", str(e))
+            logging.info("An error occurred while sending the email:", str(e))
         
+class JDBC(object):
+    def __init__(self, db):
+        self.db = db
+        self.user = 'roiblock@roiblock'
+        self.password = os.getenv("SQLCAMPAIGN_PASSWORD")
+        self.server = "jdbc:sqlserver://roiblock.database.windows.net:1433;database=%s;" % self.db
 
+    def create_dataframe_sql(self, sql):
+        """Creates a Pandas DataFrame from the provided SQL query.
+        Args:
+            sql (string): SQL query.
+        Returns:
+            Pandas DataFrame: DataFrame from a database table.
+        """  
+
+        conn = pyodbc.connect(
+            "Driver={SQL Server Native Client 11.0};"
+            "Server=" + self.server + ";"
+            "Database=" + self.db + ";"
+            "UID=" + self.user + ";"
+            "PWD=" + self.password + ";"
+        )
+
+        data = pd.read_sql_query(sql, conn)
+
+        conn.close()
+
+        return data
 ################## Functions ##################
 def helper_function():
     # Additional helper logic here
     logging.info('Helper function executed')
+
+
 
 ################## Timer Trigger ##################
 app = func.FunctionApp()
@@ -59,7 +89,7 @@ app = func.FunctionApp()
 #               use_monitor=False)          # Triggered every day at midnight
 
 @app.timer_trigger(schedule="0 * * * * *", arg_name="myTimer", run_on_startup=True,
-              use_monitor=False) 
+              use_monitor=False)            # Triggered every minute
 def timer_trigger(myTimer: func.TimerRequest) -> None:
     
     if myTimer.past_due:
@@ -71,6 +101,7 @@ def timer_trigger(myTimer: func.TimerRequest) -> None:
     test_df = pd.DataFrame(data) 
 
     sender = "supp.pub.cz@gmail.com"
+    # TODO: Get the password from Azure Key Vault
     # password = dbutils.secrets.get(scope = "key-vault-secrets", key = "MailingSupportPublicisGoogleAppPass")
     password = os.getenv("MAILING_SUPPORT_PUBLICIS_GOOGLE_APP_PASS")
     recipient = "ondrej.mach@publicisgroupe.cz"
