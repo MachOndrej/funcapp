@@ -2,11 +2,11 @@
 # The Python Worker is managed by Azure Functions platform
 # Manually managing azure-functions-worker may cause unexpected issues
 
-logging
+# logging
 azure-functions
-pandas
-pyodbc
-os
-smtplib
-email
-pretty_html_table
+# pandas
+# pyodbc
+# os
+# smtplib
+# email
+# pretty_html_table

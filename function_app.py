@@ -113,10 +113,19 @@ def timer_trigger(myTimer: func.TimerRequest) -> None:
     test_message = "Hello, this is a test email sent from Python!"
 
     email_sender_last_week = EmailSender(smtp_server, smtp_port, sender, password, recipient)
-    email_sender_last_week.send_email(subject_past, test_message, test_df)
+    # email_sender_last_week.send_email(subject_past, test_message, test_df)
 
     # TODO: Connect to blob
 
     # TODO: Connect to database
+    jdbc_planning = JDBC('Planning')  
+    query = """
+        SELECT DISTINCT client_shortcut 
+        FROM easylife_client 
+        WHERE state = 'ACTIVATED'
+        """
+    clients_df = jdbc_planning.create_dataframe_sql(query)
+    print(clients_df)
+    logging.info(clients_df)
 
     logging.info('Python timer trigger function executed.\n TODAY IS WEEK NUMBER: ', week_num)
